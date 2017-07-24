@@ -1,0 +1,19 @@
+import java.util.*;
+
+import com.sobet.bms.common.*;
+import  com.sobet.bms.utils.*;
+
+import cn.org.rapid_framework.util.*;
+import cn.org.rapid_framework.web.util.*;
+import cn.org.rapid_framework.page.*;
+import cn.org.rapid_framework.page.impl.*;
+
+import ${basepackage}.model.*;
+import ${basepackage}.dao.*;
+import ${basepackage}.service.*;
+import ${basepackage}.vo.query.*;
+
+/**
+ * @version 1.0
+ */
+

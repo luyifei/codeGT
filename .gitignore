@@ -1,0 +1,15 @@
+#IDEA
+*.iml
+*.ipr
+*.iws
+*.orig
+*.rej
+.idea
+
+# Eclipse
+.classpath
+.project
+.settings
+
+.svn
+target
