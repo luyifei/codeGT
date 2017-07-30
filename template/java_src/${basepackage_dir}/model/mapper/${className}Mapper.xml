@@ -7,25 +7,18 @@
 <#macro mapperEl value>${r"#{"}${value}}</#macro>
 <#macro namespace>${className}.</#macro>
 
-<!-- 不使用namespace的话sql搜索定位会比较方便 -->
 <mapper namespace="${className}Mapper">
-
-	<resultMap id="RM.${className}" type="${basepackage}.model.${className}">
+	<resultMap id="BaseResultMap" type="${basepackage}.entity.${className}">
         <#list table.columns as column>
         <result property="${column.columnNameLower}" column="${column.sqlName}"/>
 		</#list>
 	</resultMap>
 	
-	<!-- 用于select查询公用抽取的列 -->
-	<sql id="<@namespace/>columns">
-	    <![CDATA[
+	<sql id="columns">
 		<#list table.columns as column>${column.sqlName}<#if column_has_next>,</#if></#list>
-	    ]]>
 	</sql>
 
-	<!-- useGeneratedKeys="true" keyProperty="xxx" for sqlserver and mysql -->
-	<insert id="<@namespace/>insert" useGeneratedKeys="true" keyProperty="${table.idColumn.columnNameFirstLower}">
-    <![CDATA[
+	<insert id="${className}_insert" parameterType="${basepackage}.entity.${className}">
         INSERT INTO ${table.sqlName} (
         <#list table.columns as column>
         	${column.sqlName} <#if column_has_next>,</#if>
@@ -35,18 +28,27 @@
         	<@mapperEl column.columnNameFirstLower/> <#if column_has_next>,</#if>
         </#list>        
         )
-    ]]>
-		<!--	
-			oracle: order="BEFORE" SELECT sequenceName.nextval AS ID FROM DUAL 
-			DB2: order="BEFORE"" values nextval for sequenceName
-		<selectKey resultType="java.lang.Long" order="BEFORE" keyProperty="userId">
-			SELECT sequenceName.nextval AS ID FROM DUAL 
-        </selectKey>
-		-->
 	</insert>
+	
+	<insert id="${className}_insertSelective" parameterType="${basepackage}.entity.${className}">
+        INSERT INTO ${table.sqlName}
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+	        <#list table.columns as column>
+	            <if test="${column.sqlName} != null">
+	                ${column.sqlName},
+	            </if>
+	        </#list>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <#list table.columns as column>
+                <if test="${column.sqlName} != null">
+	               <@mapperEl column.columnNameFirstLower/>,
+	            </if>
+	        </#list> 
+        </trim>
+    </insert>
     
-	<update id="<@namespace/>update" >
-    <![CDATA[
+	<update id="${className}_update" parameterType="${basepackage}.entity.${className}">
         UPDATE ${table.sqlName} SET
 	        <#list table.notPkColumns as column>
 	        ${column.sqlName} = <@mapperEl column.columnNameFirstLower/> <#if column_has_next>,</#if>
@@ -55,10 +57,13 @@
         	<#list table.compositeIdColumns as column>
 	        ${column.sqlName} = <@mapperEl column.columnNameLower/> <#if column_has_next> AND </#if>
 	        </#list>	        
-    ]]>
+	</update>
+	
+	<!-- 更新指定列 TODO -->
+	<update id="updateByPrimaryKeySelective" parameterType="${basepackage}.entity.${className}">
 	</update>
 
-    <delete id="<@namespace/>delete">
+    <delete id="${className}_deleteByPrimaryKey" parameterType="java.lang.Long">
     <![CDATA[
         DELETE FROM ${table.sqlName} WHERE
         <#list table.compositeIdColumns as column>
@@ -67,30 +72,27 @@
     ]]>
     </delete>
     
-    <select id="<@namespace/>getById" resultMap="RM.${className}">
-		SELECT <include refid="<@namespace/>columns" />
-	    <![CDATA[
+    <select id="${className}_getById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+		SELECT <include refid="columns" />
 		    FROM ${table.sqlName} 
 	        WHERE 
 				<#list table.compositeIdColumns as column>
 		        ${column.sqlName} = <@mapperEl 'id'/> <#if column_has_next> AND </#if>
 		        </#list>    
-	    ]]>
 	</select>
 	
-	<sql id="<@namespace/>findPage.where">
-		<!-- ognl访问静态方法的表达式 为@class@method(args),以下为调用rapid中的Ognl.isNotEmpty()方法,还有其它方法如isNotBlank()可以使用，具体请查看Ognl类 -->
+	<sql id="list_where">
 		<where>	      				
 	       <#list table.columns as column>
 	       <#if column.isDateTimeColumn>
-	       <if test="@Ognl@isNotEmpty(${column.columnNameFirstLower}Begin)">
+	       <if test="${column.columnNameFirstLower} != null">
 				AND ${column.sqlName} >= <@mapperEl column.columnNameFirstLower+"Begin"/>
 		   </if>
-		   <if test="@Ognl@isNotEmpty(${column.columnNameFirstLower}End)">
+		   <if test="${column.columnNameFirstLower} != null">
 				AND ${column.sqlName} &lt;= <@mapperEl column.columnNameFirstLower+"End"/>
 		   </if>
 	       <#else>
-	       <if test="@Ognl@isNotEmpty(${column.columnNameFirstLower})">
+	       <if test="${column.columnNameFirstLower} != null">
 				AND ${column.sqlName} = <@mapperEl column.columnNameFirstLower/>
 			</if>
 	       </#if>
@@ -98,29 +100,28 @@
 		</where>
 	</sql>
 		
-    <select id="<@namespace/>findPage.count" resultType="long">
-        SELECT count(*) FROM ${table.sqlName} 
-		<include refid="<@namespace/>findPage.where"/>    
+    <select id="list_count" parameterType="${basepackage}.entity.${className}Query" resultType="java.lang.Long">
+        SELECT count(1) FROM ${table.sqlName} 
+		<include refid="list_where"/>    
     </select>
     
     <!--
     	分页查询已经使用Dialect进行分页,也可以不使用Dialect直接编写分页
     	因为分页查询将传 offset,pageSize,lastRows 三个参数,不同的数据库可以根于此三个参数属性应用不同的分页实现
     -->
-    <select id="<@namespace/>findPage" resultMap="RM.${className}">
-    	SELECT <include refid="<@namespace/>columns" />
+    <select id="list" resultMap="BaseResultMap">
+    	SELECT <include refid="columns" />
 	    FROM ${table.sqlName} 
-		<include refid="<@namespace/>findPage.where"/>
-		
-		<if test="@Ognl@isNotEmpty(sortColumns)">
+		<include refid="list_where"/>
+		<if test="sortColumns != null">
 			ORDER BY <@jspEl 'sortColumns'/>
 		</if>
     </select>
 
     <#list table.columns as column>
     <#if column.unique && !column.pk>
-    <select id="<@namespace/>getBy${column.columnName}" resultMap="RM.${className}" parameterType="${column.javaType}">
-	    SELECT <include refid="<@namespace/>columns"/>
+    <select id="getBy${column.columnName}" resultMap="BaseResultMap" parameterType="${column.javaType}">
+	    SELECT <include refid="columns"/>
 	    <![CDATA[
 	        FROM ${table.sqlName} where ${column.sqlName} = <@mapperEl column.columnNameLower/>
 	    ]]>
