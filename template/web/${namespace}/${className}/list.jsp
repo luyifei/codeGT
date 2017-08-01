@@ -1,127 +1,240 @@
-<%@page import="${basepackage}.model.*" %>
 <#include "/macro.include"/> 
-<#include "/custom.include"/> 
 <#assign className = table.className>   
-<#assign classNameLower = className?uncap_first> 
-<%@ page contentType="text/html;charset=UTF-8" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<#assign classNameLower = className?uncap_first>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 <%@ taglib tagdir="/WEB-INF/tags/simpletable" prefix="simpletable"%>
-<%@ include file="/commons/taglibs.jsp" %>
+<%
+    String path = request.getContextPath();
+    String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.getServerPort()+path+"/";
+%>
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    <base href="<%=basePath%>">
+    <!-- jsp文件头和头部 -->
+    <%@ include file="/views/system/admin/base.jsp"%> 
+    </head> 
+<body>
+        
+<div class="main-container ace-save-state" id="main-container">
 
-<rapid:override name="head">
-	<title><%=${className}.TABLE_ALIAS%> 维护</title>
-	
-	<link href="<c:url value="/widgets/simpletable/simpletable.css"/>" type="text/css" rel="stylesheet">
-	<script type="text/javascript" src="<c:url value="/widgets/simpletable/simpletable.js"/>"></script>
-	
-	<script type="text/javascript" >
-		$(document).ready(function() {
-			// 分页需要依赖的初始化动作
-			window.simpleTable = new SimpleTable('queryForm',<@jspEl 'page.thisPageNumber'/>,<@jspEl 'page.pageSize'/>,'<@jspEl 'pageRequest.sortColumns'/>');
-		});
-	</script>
-</rapid:override>
 
-<rapid:override name="content">
-	<form id="queryForm" name="queryForm" action="<c:url value="${actionBasePath}/list.do"/>" method="get" style="display: inline;">
-	<div class="queryPanel">
-		<fieldset>
-			<legend>搜索</legend>
-			<table>
-				<#list table.notPkColumns?chunk(4) as row>
-				<tr>	
-					<#list row as column>
-					<#if !column.htmlHidden>	
-					<td class="tdLabel"><%=${className}.ALIAS_${column.constantName}%></td>		
-					<td>
-						<#if column.isDateTimeColumn>
-						<input value="<fmt:formatDate value='<@jspEl "query."+column.columnNameLower+'Begin'/>' pattern='<%=${className}.FORMAT_${column.constantName}%>'/>" onclick="WdatePicker({dateFmt:'<%=${className}.FORMAT_${column.constantName}%>'})" id="${column.columnNameLower}Begin" name="${column.columnNameLower}Begin"   />
-						<input value="<fmt:formatDate value='<@jspEl "query."+column.columnNameLower+'End'/>' pattern='<%=${className}.FORMAT_${column.constantName}%>'/>" onclick="WdatePicker({dateFmt:'<%=${className}.FORMAT_${column.constantName}%>'})" id="${column.columnNameLower}End" name="${column.columnNameLower}End"   />
-						<#else>
-						<input value="<@jspEl "query."+column.columnNameLower/>" id="${column.columnNameLower}" name="${column.columnNameLower}" maxlength="${column.size}"  class="${column.noRequiredValidateString}"/>
-						</#if>
-					</td>
-					</#if>
-					</#list>
-				</tr>	
-				</#list>			
-			</table>
-		</fieldset>
-		<div class="handleControl">
-			<input type="submit" class="stdButton" style="width:80px" value="查询" onclick="getReferenceForm(this).action='<@jspEl 'ctx'/>${actionBasePath}/list.do'"/>
-			<input type="submit" class="stdButton" style="width:80px" value="新增" onclick="getReferenceForm(this).action='<@jspEl 'ctx'/>${actionBasePath}/create.do'"/>
-			<input type="button" class="stdButton" style="width:80px" value="删除" onclick="batchDelete('<@jspEl 'ctx'/>${actionBasePath}/delete.do','items',document.forms.queryForm)"/>
-		<div>
-	</div>
-	
-	<div class="gridTable">
-	
-		<table width="100%"  border="0" cellspacing="0" class="gridBody">
-		  <thead>
-			  
-			  <tr>
-				<th style="width:1px;"> </th>
-				<th style="width:1px;"><input type="checkbox" onclick="setAllCheckboxState('items',this.checked)"></th>
-				
-				<!-- 排序时为th增加sortColumn即可,new SimpleTable('sortColumns')会为tableHeader自动增加排序功能; -->
-				<#list table.columns as column>
-				<#if !column.htmlHidden>
-				<th sortColumn="${column.sqlName}" ><%=${className}.ALIAS_${column.constantName}%></th>
-				</#if>
-				</#list>
-	
-				<th>操作</th>
-			  </tr>
-			  
-		  </thead>
-		  <tbody>
-		  	  <c:forEach items="<@jspEl 'page.result'/>" var="item" varStatus="status">
-		  	  
-			  <tr class="<@jspEl "status.count % 2 == 0 ? 'odd' : 'even'"/>">
-				<td><@jspEl 'page.thisPageFirstElementNumber + status.index'/></td>
-				<td><input type="checkbox" name="items" value="<@generateIdQueryString/>"></td>
-				
-				<#list table.columns as column>
-				<#if !column.htmlHidden>
-				<td><#rt>
-					<#compress>
-					<#if column.isDateTimeColumn>
-					<c:out value='<@jspEl "item."+column.columnNameLower+"String"/>'/>&nbsp;
-					<#else>
-					<c:out value='<@jspEl "item."+column.columnNameLower/>'/>&nbsp;
-					</#if>
-					</#compress>
-				<#lt></td>
-				</#if>
-				</#list>
-				<td>
-					<a href="<@jspEl 'ctx'/>${actionBasePath}/show.do?<@generateIdQueryString/>">查看</a>&nbsp;&nbsp;&nbsp;
-					<a href="<@jspEl 'ctx'/>${actionBasePath}/edit.do?<@generateIdQueryString/>">修改</a>
-				</td>
-			  </tr>
-			  
-		  	  </c:forEach>
-		  </tbody>
-		</table>
-	
-		<simpletable:pageToolbar page="<@jspEl 'page'/>">
-		</simpletable:pageToolbar>
-	</div>
-	</form>
-</rapid:override>
+<div id="page-content">
+                        
+  <div class="row-fluid">
+    <div class="page-content">
+            <!-- 检索  -->
+            <form action="${classNameLower}/list.do" method="post" name="searchForm" id="searchForm">
+            <div class="tabbable">
+                <div class="tab-content">
+                      <div id="home" class="tab-pane fade in active">
+                        <table>
+		                    <tr>
+		                        <td class="search-key">
+		                                                                            用户名
+		                        </td>
+		                        <td class="search-value">
+		                              <input class="input-large" id="userName" type="text" name="userName" value="${query.userName}" placeholder="这里输入关键词" />
+		                        </td>
+		                        <td class="search-key">
+                                                                                                    姓名
+                                </td>
+		                        <td class="search-value">
+		                              <input class="input-large" id="name" type="text" name="name" value="${query.name}" placeholder="这里输入关键词" />
+		                        </td>
+		                    </tr>
+		                    <tr>
+		                      <td colspan="10">
+                                     <a class="btn btn-sm btn-primary" onclick="submit();">搜索 <i class="ace-icon glyphicon glyphicon-search"></i></a>
+                                     <a class="btn btn-sm btn-primary" onclick="create();">新增 <i class="ace-icon glyphicon glyphicon-plus"></i></a>
+                                </td>
+		                    </tr>
+		                </table>
+                      </div>
+                </div>
+            </div>
+            <!-- 检索  -->
+            <table id="table_report" class="table table-striped table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th class="center">
+                            <label class="pos-rel">
+                                <input type="checkbox" class="ace" />
+                                <span class="lbl"></span>
+                            </label>
+                        </th>
+                        <th>序号</th>
+                        <th>编号</th>
+                        <th>用户名</th>
+                        <th>姓名</th>
+                        <th>职位</th>
+                        <th>邮箱</th>
+                        <th>最近登录</th>
+                        <th>上次登录IP</th>
+                        <th>状态</th>
+                        <th class="center">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <c:choose>
+                    <c:when test="${not empty page.result}">
+                        <!-- 开始循环 -->   
+                        <c:forEach items="${page.result}" var="item" varStatus="vs">
+                            <tr>
+                                <td class='center' style="width: 20px;">
+                                  <label><input type='checkbox' class="ace" name='ids' value="${item.id}" alt="${user.userName}"/><span class="lbl"></span></label>
+                                </td>
+                                <td>${item.userName}</td>
+                                <td>${item.userName}</td>
+                                <td>${item.userName}</td>
+                                <td>${item.userName}</td>
+                                <td>${item.userName}</td>
+                                <td>${item.userName}</td>
+                                <td>${item.userName}</td>
+                                <td><input type="number" value="" id="jumpPageNumber" style="height:32px;width:70px;text-align:center;float:left;" placeholder="页码"></td>
+                                <td class='center' style="width: 20px;">
+                                    <label class="pull-center inline">
+                                        <input id="id-button-borders" id="status${item.id}" <c:if test="${item.status == 0 }">checked="checked"</c:if> onclick="switchStatus(this.id,'status',${item.id})" type="checkbox" class="ace ace-switch ace-switch-7" >
+                                        <span class="lbl middle"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <a class='btn btn-xs btn-primary' title="编辑" onclick="edit(${item.id});"><i class='ace-icon fa fa-pencil-square-o'></i></a>
+                                    <a class='btn btn-xs btn-warning' title="详情" onclick="show(${item.id});"><i class='ace-icon fa fa-info-circle'></i></a>
+                                    <a class='btn btn-xs btn-danger' title="删除" onclick="remove(${item.id});"><i class='ace-icon fa fa-trash-o'></i></a>
+                                </td>
+                            </tr>
+                        </c:forEach>
+                        </c:when>
+                        <c:otherwise>
+	                        <tr class="main_info">
+	                            <td colspan="10" class="center">没有相关数据</td>
+	                        </tr>
+                        </c:otherwise>
+                    </c:choose>
+                </tbody>
+            </table>
+            <simpletable:pageToolbar page="${page}">
+            </simpletable:pageToolbar>
+        </form>
+    </div>
+  
+</div>
+    
+</div>
+</div>
+        
+        <!-- 返回顶部  -->
+        <a href="#" id="btn-scroll-up" class="btn-scroll-up btn btn-sm btn-inverse display">
+            <i class="ace-icon fa fa-angle-double-up icon-only bigger-110"></i>
+        </a>
+        
+        <!-- 引入 -->
+        <script type="text/javascript" src="scripts/bootstrap/dist/js/bootstrap.min.js"></script>
+        <script type="text/javascript" src="scripts/ace/dist/js/ace-elements.min.js"></script>
+        <script type="text/javascript" src="scripts/ace/dist/js/ace.min.js"></script>
+        
+        <script type="text/javascript" src="scripts/chosen/chosen.jquery.min.js"></script><!-- 下拉框 -->
+        <script type="text/javascript" src="scripts/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js"></script><!-- 日期框 -->
+        <script type="text/javascript" src="scripts/bootbox.js/bootbox.min.js"></script><!-- 确认窗口 -->
+        <script type="text/javascript" src="scripts/layer/layer.js"></script>
+        
+        <!-- 引入 -->
+        
+        
+        <script type="text/javascript" src="<c:url value="/widgets/simpletable/simpletable.js"/>"></script>
+        <script type="text/javascript">
+        $(document).ready(function() {
+            // 分页需要依赖的初始化动作
+            window.simpleTable = new SimpleTable('searchForm',${page.thisPageNumber},${page.pageSize},'${pageRequest.sortColumns}');
+            
+          //复选框
+            $('table th input:checkbox').on('click' , function(){
+                var that = this;
+                $(this).closest('table').find('tr > td:first-child input:checkbox')
+                .each(function(){
+                    this.checked = that.checked;
+                    $(this).closest('tr').toggleClass('selected');
+                });
+                    
+            });
+            $(top.hangge());
+        });
+        //检索
+        function submit(){
+        	$("#searchForm").submit();
+        }
+        function create(){
+        	layer.open({
+        		  type: 2,
+        		  title: '新增',
+        		  area: ['800px', '650px'],
+        		  fixed: false,
+        		  maxmin: true,
+        		  content: 'systemUser/create.do'
+        		});
+        }
+        function edit(id){
+            layer.open({
+                  type: 2,
+                  title: '编辑',
+                  area: ['800px', '650px'],
+                  fixed: false,
+                  maxmin: true,
+                  content: 'systemUser/edit.do?id='+id
+                });
+        }
+        function show(id){
+            layer.open({
+                  type: 2,
+                  title: '详情',
+                  area: ['800px', '650px'],
+                  fixed: false,
+                  maxmin: true,
+                  content: 'systemUser/show.do?id='+id
+                });
+        }
+        function remove(){
+            layer.open({
+                  type: 2,
+                  title: '新增',
+                  area: ['800px', '650px'],
+                  fixed: false,
+                  maxmin: true,
+                  content: 'systemUser/create.do'
+                });
+        }
+        <%-- function switchStatus(id,'status',id2){
+            if(id != hcid1){
+                hcid1 = id;
+                qxhc1 = '';
+            }
+            var value = 1;
+            var wqx = $("#"+id).attr("checked");
+            if(qxhc1 == ''){
+                if(wqx == 'checked'){
+                    qxhc1 = 'checked';
+                }else{
+                    qxhc1 = 'unchecked';
+                }
+            }
+            if(qxhc1 == 'checked'){
+                value = 0;
+                qxhc1 = 'unchecked';
+            }else{
+                value = 1;
+                qxhc1 = 'checked';
+            }
+                var url = "<%=basePath%>role/kfqx.do?kefu_id="+kefu_id+"&msg="+msg+"&value="+value+"&guid="+new Date().getTime();
+                $.get(url,function(data){
+                    if(data=="success"){
+                        //document.location.reload();
+                    }
+                });
+        } --%>
+        </script>
+    </body>
+</html>
 
-<%-- jsp模板继承,具体使用请查看: http://code.google.com/p/rapid-framework/wiki/rapid_jsp_extends --%>
-<%@ include file="base.jsp" %>
-
-<#macro generateIdQueryString>
-	<#if table.compositeId>
-		<#assign itemPrefix = 'item.id.'>
-	<#else>
-		<#assign itemPrefix = 'item.'>
-	</#if>
-<#compress>
-		<#list table.compositeIdColumns as column>
-			<#t>${column.columnNameLower}=<@jspEl itemPrefix + column.columnNameLower/>&
-		</#list>				
-</#compress>
-</#macro>

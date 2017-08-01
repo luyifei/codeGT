@@ -10,14 +10,12 @@ public class GeneratorMain {
      */
     public static void main(String[] args) throws Exception {
         // GeneratorProperties.setProperty("outRoot", "c:\\generator-output");
-        String requiredProperty = GeneratorProperties.getRequiredProperty("outRoot");
-        System.out.println("目录：" + requiredProperty);
         GeneratorFacade g = new GeneratorFacade();
+        String templatePath = "template";
+        g.getGenerator().addTemplateRootDir(templatePath);
         // g.printAllTableNames(); //打印数据库中的表名称
-
-        g.deleteOutRootDir(); // 删除生成器的输出目录
-        g.generateByTable("t_activity_round_reward", "template"); // 通过数据库表生成文件,template为模板的根目录
-        // g.generateByTable("pre_admin_withdraw_setting","template"); //通过数据库表生成文件,template为模板的根目录
+//        g.deleteOutRootDir(); // 删除生成器的输出目录
+        g.generateByTable("t_system_role"); // 通过数据库表生成文件,template为模板的根目录
         // g.generateByAllTable("template"); //自动搜索数据库中的所有表并生成文件,template为模板的根目录
         // g.generateByClass(Blog.class,"template_clazz");
 
