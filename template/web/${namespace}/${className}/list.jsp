@@ -31,20 +31,25 @@
                 <div class="tab-content">
                       <div id="home" class="tab-pane fade in active">
                         <table>
+                        <#list table.notPkColumns?chunk(4) as row>
 		                    <tr>
+		                      <#list row as column>
+                              <#if !column.htmlHidden> 
 		                        <td class="search-key">
-		                                                                            用户名
+		                              ${column.constantName}
 		                        </td>
 		                        <td class="search-value">
-		                              <input class="input-large" id="userName" type="text" name="userName" value="${query.userName}" placeholder="这里输入关键词" />
+		                              <#if column.isDateTimeColumn>
+				                        <input value="<@jspEl classNameLower+"."+column.columnNameLower+"Begin"/>" onclick="WdatePicker({dateFmt:'<%=${className}.FORMAT_${column.constantName}%>'})" id="${column.columnNameLower}Begin" name="${column.columnNameLower}Begin"  />
+				                        <input value="<@jspEl classNameLower+"."+column.columnNameLower+"End"/>" onclick="WdatePicker({dateFmt:'<%=${className}.FORMAT_${column.constantName}%>'})" id="${column.columnNameLower}End" name="${column.columnNameLower}End"  />
+				                       <#else>
+		                                <input class="input-large" id="${column.columnNameLower}" type="text" name="${column.columnNameLower}" value="<@jspEl "query."+column.columnNameLower/>" placeholder="这里输入关键词" />
+				                       </#if>
 		                        </td>
-		                        <td class="search-key">
-                                                                                                    姓名
-                                </td>
-		                        <td class="search-value">
-		                              <input class="input-large" id="name" type="text" name="name" value="${query.name}" placeholder="这里输入关键词" />
-		                        </td>
+		                       </#if>
+                               </#list>
 		                    </tr>
+		                    </#list>
 		                    <tr>
 		                      <td colspan="10">
                                      <a class="btn btn-sm btn-primary" onclick="submit();">搜索 <i class="ace-icon glyphicon glyphicon-search"></i></a>
@@ -65,45 +70,40 @@
                                 <span class="lbl"></span>
                             </label>
                         </th>
-                        <th>序号</th>
-                        <th>编号</th>
-                        <th>用户名</th>
-                        <th>姓名</th>
-                        <th>职位</th>
-                        <th>邮箱</th>
-                        <th>最近登录</th>
-                        <th>上次登录IP</th>
-                        <th>状态</th>
+                        <#list table.columns as column>
+		                <#if !column.htmlHidden>
+		                <th>${column.constantName}</th>
+		                </#if>
+		                </#list>
                         <th class="center">操作</th>
                     </tr>
                 </thead>
                 <tbody>
                     <c:choose>
-                    <c:when test="${not empty page.result}">
+                    <c:when test="<@jspEl 'not empty page.result'/>">
                         <!-- 开始循环 -->   
-                        <c:forEach items="${page.result}" var="item" varStatus="vs">
+                        <c:forEach items="<@jspEl 'page.result'/>" var="item" varStatus="vs">
                             <tr>
                                 <td class='center' style="width: 20px;">
-                                  <label><input type='checkbox' class="ace" name='ids' value="${item.id}" alt="${user.userName}"/><span class="lbl"></span></label>
+                                  <label><input type='checkbox' class="ace" name='ids' value="<@jspEl 'item.id'/>" alt="alt内容"/><span class="lbl"></span></label>
                                 </td>
-                                <td>${item.userName}</td>
-                                <td>${item.userName}</td>
-                                <td>${item.userName}</td>
-                                <td>${item.userName}</td>
-                                <td>${item.userName}</td>
-                                <td>${item.userName}</td>
-                                <td>${item.userName}</td>
-                                <td><input type="number" value="" id="jumpPageNumber" style="height:32px;width:70px;text-align:center;float:left;" placeholder="页码"></td>
-                                <td class='center' style="width: 20px;">
-                                    <label class="pull-center inline">
-                                        <input id="id-button-borders" id="status${item.id}" <c:if test="${item.status == 0 }">checked="checked"</c:if> onclick="switchStatus(this.id,'status',${item.id})" type="checkbox" class="ace ace-switch ace-switch-7" >
-                                        <span class="lbl middle"></span>
-                                    </label>
-                                </td>
+                                <#list table.columns as column>
+				                <#if !column.htmlHidden>
+				                <td><#rt>
+				                    <#compress>
+				                    <#if column.isDateTimeColumn>
+				                        <@jspEl "item."+column.columnNameLower+"String"/>
+				                    <#else>
+				                        <@jspEl "item."+column.columnNameLower/>
+				                    </#if>
+				                    </#compress>
+				                <#lt></td>
+				                </#if>
+				                </#list>
                                 <td>
-                                    <a class='btn btn-xs btn-primary' title="编辑" onclick="edit(${item.id});"><i class='ace-icon fa fa-pencil-square-o'></i></a>
-                                    <a class='btn btn-xs btn-warning' title="详情" onclick="show(${item.id});"><i class='ace-icon fa fa-info-circle'></i></a>
-                                    <a class='btn btn-xs btn-danger' title="删除" onclick="remove(${item.id});"><i class='ace-icon fa fa-trash-o'></i></a>
+                                    <a class='btn btn-xs btn-primary' title="编辑" onclick="edit(<@jspEl 'item.id'/>);"><i class='ace-icon fa fa-pencil-square-o'></i></a>
+                                    <a class='btn btn-xs btn-warning' title="详情" onclick="show(<@jspEl 'item.id'/>);"><i class='ace-icon fa fa-info-circle'></i></a>
+                                    <a class='btn btn-xs btn-danger' title="删除" onclick="remove(<@jspEl 'item.id'/>);"><i class='ace-icon fa fa-trash-o'></i></a>
                                 </td>
                             </tr>
                         </c:forEach>
@@ -116,7 +116,7 @@
                     </c:choose>
                 </tbody>
             </table>
-            <simpletable:pageToolbar page="${page}">
+            <simpletable:pageToolbar page="<@jspEl 'page'/>">
             </simpletable:pageToolbar>
         </form>
     </div>
@@ -148,7 +148,7 @@
         <script type="text/javascript">
         $(document).ready(function() {
             // 分页需要依赖的初始化动作
-            window.simpleTable = new SimpleTable('searchForm',${page.thisPageNumber},${page.pageSize},'${pageRequest.sortColumns}');
+            window.simpleTable = new SimpleTable('searchForm',<@jspEl 'page.thisPageNumber'/>,<@jspEl 'page.pageSize'/>,'<@jspEl 'pageRequest.sortColumns'/>');
             
           //复选框
             $('table th input:checkbox').on('click' , function(){
@@ -173,7 +173,7 @@
         		  area: ['800px', '650px'],
         		  fixed: false,
         		  maxmin: true,
-        		  content: 'systemUser/create.do'
+        		  content: '${classNameLower}/create.do'
         		});
         }
         function edit(id){
@@ -183,7 +183,7 @@
                   area: ['800px', '650px'],
                   fixed: false,
                   maxmin: true,
-                  content: 'systemUser/edit.do?id='+id
+                  content: '${classNameLower}/edit.do?id='+id
                 });
         }
         function show(id){
@@ -193,7 +193,7 @@
                   area: ['800px', '650px'],
                   fixed: false,
                   maxmin: true,
-                  content: 'systemUser/show.do?id='+id
+                  content: '${classNameLower}/show.do?id='+id
                 });
         }
         function remove(){
@@ -203,37 +203,9 @@
                   area: ['800px', '650px'],
                   fixed: false,
                   maxmin: true,
-                  content: 'systemUser/create.do'
+                  content: '${classNameLower}/create.do'
                 });
         }
-        <%-- function switchStatus(id,'status',id2){
-            if(id != hcid1){
-                hcid1 = id;
-                qxhc1 = '';
-            }
-            var value = 1;
-            var wqx = $("#"+id).attr("checked");
-            if(qxhc1 == ''){
-                if(wqx == 'checked'){
-                    qxhc1 = 'checked';
-                }else{
-                    qxhc1 = 'unchecked';
-                }
-            }
-            if(qxhc1 == 'checked'){
-                value = 0;
-                qxhc1 = 'unchecked';
-            }else{
-                value = 1;
-                qxhc1 = 'checked';
-            }
-                var url = "<%=basePath%>role/kfqx.do?kefu_id="+kefu_id+"&msg="+msg+"&value="+value+"&guid="+new Date().getTime();
-                $.get(url,function(data){
-                    if(data=="success"){
-                        //document.location.reload();
-                    }
-                });
-        } --%>
         </script>
     </body>
 </html>
